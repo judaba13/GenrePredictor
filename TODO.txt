@@ -1,0 +1,3 @@
+TODO:
+- Create custom map class with current DB data that just removes the familiarity and hotness fields and makes them instance methods 
+- Figure out way to parse HDF5 files and get and add this extra data to the maps we have
