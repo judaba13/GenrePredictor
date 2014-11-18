@@ -170,7 +170,7 @@ def get_songs(artist_id, year_min, year_max, limit):
         cur = con.cursor()   
 
         #cur.execute('SELECT artist_id, artist_name, title, year, track_7digitalid FROM songs WHERE artist_id = ? AND year BETWEEN ? AND ? ORDER BY artist_familiarity DESC LIMIT ?', (artist_id, year_min, year_max, limit))
-        cur.execute('SELECT artist_id, artist_name, title, year, song_id, duration FROM songs WHERE artist_id = ? AND year BETWEEN ? AND ? ORDER BY year ASC LIMIT ?', (artist_id, year_min, year_max, limit))
+        cur.execute('SELECT artist_id, artist_name, title, year, track_id, duration FROM songs WHERE artist_id = ? AND year BETWEEN ? AND ? ORDER BY year ASC LIMIT ?', (artist_id, year_min, year_max, limit))
         result = []
         for row in cur.fetchall():
             new_record = {}
@@ -178,7 +178,7 @@ def get_songs(artist_id, year_min, year_max, limit):
             new_record['artist_name'] = row[1]
             new_record['title'] = row[2]
             new_record['year'] = row[3]
-            new_record['song_id'] = row[4]
+            new_record['track_id'] = row[4]
             new_record['duration'] = row[5]
             result.append(new_record)
         return result
@@ -195,8 +195,11 @@ if __name__ == '__main__':
     table_res = get_stuff()
     print table_res
     """
+    #print os.path.isfile('MillionSongSubset\\data\\A\\M\\B\\TRAMBNF128F426FBB6.h5')
+
     artist_info = get_artists(1900, 2020, 1000000)
     print artist_info[100]
+
 
     """
     # help menu
