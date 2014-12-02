@@ -13,7 +13,6 @@ def nb(traindata, testdata):
     testlabel = []
     trainfeature = []
     testfeature = []
-    
     for d in traindata:
         featuremat = []
         for feature in d:
