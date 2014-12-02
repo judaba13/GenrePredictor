@@ -10,6 +10,8 @@ import sys
 import numpy as np
 from Artistdata import *
 import hdf5_getters
+import nb
+import pickle
 try:
     import sqlite3 as db
 except ImportError:
@@ -636,16 +638,21 @@ if __name__ == '__main__':
     #data holds a list of Datapoints (aka maps)
     """
     data = generate_data()
+    #pickle stuff
+    output = open('data.pkl','wb')
+    pickle.dump(data,output)
+    output.close()
+
+    """
+    print data2[15]
+    print data2[15].hotttnesss
+    print data2[15].familiarity
+    print data2[15].artist_name
+    print data2[15].artist_id
+    print data2[15].artist_location==""
+    print data2[15].track_ids[0]
+    """
     
-    """
-    print data[15]
-    print data[15].hotttnesss
-    print data[15].familiarity
-    print data[15].artist_name
-    print data[15].artist_id
-    print data[15].artist_location==""
-    print data[15].track_ids[0]
-    """
     
     
     """

@@ -20,7 +20,7 @@ def nb(traindata, testdata):
         trainfeature.append(featuremat)
 #         TODO:
 #         trainlabel
-        trainlabel.append(d.label)
+        trainlabel.append(d.familiarity)
         
     for d in testdata:
 #         TODO: add test label
@@ -28,7 +28,7 @@ def nb(traindata, testdata):
         for feature in d:
             featuremat.append(feature)
         testfeature.append(featuremat)
-        testlabel.append(d.label)
+        testlabel.append(d.familiarity)
 
     labels = list(set(trainlabel))
     labelindex = []
@@ -43,7 +43,7 @@ def nb(traindata, testdata):
             # find probaility of each label and store the result 
             nlabel = len(labelindex[labels.index(label)])
             PY = nlabel/len(trainlabel)
-            index = labelindex(labels.index(label))
+            index = labelindex[labels.index(label)]
             nbprob = PY
             newfeatures = [[]]
             # change the direction of the feature matrix of the specific label case
@@ -63,7 +63,7 @@ def nb(traindata, testdata):
             probs.append(nbprob)
         # determine the label with maximum probability and add to results
         maxprob = max(probs)
-        results.append(labels(probs.index(maxprob)))
+        results.append(labels[probs.index(maxprob)])
     # result contains the max probability label for each test case
     print accuracy(results,testlabel)
     return results
@@ -78,6 +78,6 @@ def accuracy(result, data):
 def find(mat,element):
     idx = []
     for i in range(len(mat)):
-        if mat(i)==element:
+        if mat[i]==element:
             idx.append(i)
     return idx
