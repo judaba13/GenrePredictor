@@ -283,6 +283,8 @@ def parse_aggregate_songs(file_name):
             continue
 
         #TODO:MAYBE filter on dance and energy
+        timbre = hdf5_getters.get_segments_timbre(h5,i)
+        #timbre[#] gives len 12 array so for each arr in timbre, add up to get segment and add to corresponding 12 features and avg across each
         if not artist_name in artist_map:
             #have not encountered the artist yet, so populate new map
             sub_map = {}
@@ -561,6 +563,24 @@ def scale_and_convert_maps(artist_maps):
 
     return data_points
 
+def generate_data():
+    """
+    This is the master function to call that returns a list of Datapoints!
+    """
+    #Gets the most popular artist tags
+    res = get_mbtag_freq(100, False) #use top 100 results for genres [eco name:0/1] in feature map
+    freq_map = {}
+    for pair in res:
+        freq_map[pair[0]] = pair[1]
+
+    #Takes an aggregated song file (created from create_summary_file.py) and parses it
+    artist_map = parse_aggregate_songs('agg_all_songs.h5')
+    #flattens the artist map into a list
+    artist_list = parse_artist_map(artist_map, freq_map)
+    #normalize the list and make it a list of Datapoints
+    data = scale_and_convert_maps(artist_list)
+    return data
+
 if __name__ == '__main__':
     """
     table_res = get_stuff()
@@ -578,6 +598,7 @@ if __name__ == '__main__':
     #artist_info = get_artists(1900, 2020, 1000000)
     #print artist_info[1079]
 
+    """
     #Gets the most popular artist tags
     res = get_mbtag_freq(100, False) #use top 100 results for genres [eco name:0/1] in feature map
     freq_map = {}
@@ -595,6 +616,7 @@ if __name__ == '__main__':
     #for confidences either ignore or wieght it by that
     #keep DB id as field
     """
+    """
     NOTE:  term frequency is directly proportional to how often that term
     is used to describe that artist. Term weight is a measure of how 
     important that term is in describing the artist. As an example of the
@@ -604,7 +626,7 @@ if __name__ == '__main__':
     weighted terms for The Beatles are 'merseybeat' and 'british invasion', 
     which give you a better idea of what The Beatles are all about than 'rock' does. We don't publish the details of our algorithms, but I can tell you that frequency is related to the simple counting of appearance of a term, whereas weight is related to TF-IDF
     """
-    
+    """
     #Takes an aggregated song file (created from create_summary_file.py) and parses it
     artist_map = parse_aggregate_songs('agg_all_songs.h5')
     #flattens the artist map into a list
@@ -612,6 +634,8 @@ if __name__ == '__main__':
     #normalize the list and make it a list of Datapoints
     data = scale_and_convert_maps(artist_list)
     #data holds a list of Datapoints (aka maps)
+    """
+    data = generate_data()
     
     """
     print data[15]
@@ -622,6 +646,7 @@ if __name__ == '__main__':
     print data[15].artist_location==""
     print data[15].track_ids[0]
     """
+    
     
     """
     print str(len(data))
