@@ -6,6 +6,7 @@ Created on Nov 13, 2014
 
 import math 
 from Datapoint import Datapoint
+import numpy as np
 
 def nb(traindata, testdata):
     
@@ -30,55 +31,38 @@ def nb(traindata, testdata):
             featuremat.append(feature)
         testfeature.append(featuremat)
         testlabel.append(d.label)
-        
-    n = len(trainlabel)
-    npos = 0
-    nneg = 0
-    for label in trainlabel:
-        if label == 1: npos = npos+1
-        else: nneg = nneg+1
-    posindex = find(trainlabel,1)
-    negindex = find(trainlabel,-1)
-    lpos = 0
-    lneg = 0
-    v = 0
-    wpos = []
-    wneg = []
-    for idx in posindex:
-        featurespace = trainfeature(idx)
-        lpos = sum(featurespace) + lpos
-        v = max([v,len(featurespace)])
-        for k in range(len(featurespace)):
-            if k+1 <= len(wpos):
-                wpos[k] = wpos[k] + featurespace[k]
-            else:
-                wpos[k] = featurespace[k]
-                
-    for idx in negindex:
-        featurespace = trainfeature(idx)
-        lneg = sum(featurespace) + lneg
-        v = max([v,len(featurespace)])
-        for k in range(len(featurespace)):
-            if k+1 <= len(wneg):
-                wneg[k] = wneg[k] + featurespace[k]
-            else:
-                wneg[k] = featurespace[k]
-    
-    PYpos = npos/n
-    PYneg = nneg/n
-    PWYpos = matdiv([w+1 for w in wpos],[l+v for l in lpos])
-    PWYneg = matdiv([w+1 for w in wneg],[l+v for l in lneg])
-    classification = [0]*len(testfeature)
-    for i in range(len(testfeature)):
-        featurespace = testfeature[i]
-        probpos = nbprob(PWYpos,PYpos,featurespace)
-        probneg = nbprob(PWYneg,PYneg,featurespace)
-        if probpos >= probneg:
-            classification[i] = 1
-        else: classification[i] = -1
-    
-    testAccuracy = accuracy(classification,testlabel)
-    print "Accuracy: ", testAccuracy
+
+    labels = list(set(trainlabel))
+    labelindex = []
+    for label in labels:
+        labelindex.append(find(trainlabel,label))
+
+    results = []
+    for testcase in testfeature:
+        probs = []
+        for label in labels:
+            nlabel = len(labelindex[labels.index(label)])
+            PY = nlabel/len(trainlabel)
+            index = labelindex(labels.index(label))
+            nbprob = PY
+            newfeatures = [[]*len(testcase)]
+            for idx in index:
+                testdata = trainfeature[idx]
+                for i in range(len(testdata)):
+                    newfeatures[i].append(testdata[i])
+            for i in range(len(testcase)):
+                feature = testcase[i]
+                featurepool = newfeatures[i]
+                PXY = (featurepool.count(feature)+1)/(len(featurepool)+len(set(featurepool)))
+                nbprob = nbprob * PXY
+            probs.append(nbprob)
+        maxprob = max(probs)
+        results.append(labels(probs.index(maxprob)))
+    return results
+
+
+
+
         
     
 def accuracy(result, data):
