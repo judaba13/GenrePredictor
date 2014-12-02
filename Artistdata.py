@@ -7,6 +7,8 @@ class DataPoint(dict):
 		self.artist_location = self['artist_location']
 		self.track_ids = self['track_id']
 		self.artist_name = self['artist_name']
+		self.years = self['years']
+		del self['years']
 		del self['track_id']
 		del self['artist_name']
 		del self['artist_id']

@@ -146,6 +146,7 @@ def get_artists(year_min, year_max, limit, order_by = None):
     Gets artists and their details withing a year range
     """
     con = None
+    result = []
     try:
         #con = db.connect('subset_artist_similarity.db')
         #con = db.connect('subset_artist_term.db')
@@ -239,6 +240,7 @@ def get_mbtag_freq(n, tags):
             con.close()
     return ['unexpected end of function']
 
+
 def parse_aggregate_songs(file_name):
     """
     Given an aggregate filename and artist_map in the format
@@ -258,20 +260,43 @@ def parse_aggregate_songs(file_name):
     print 'Parsing song file...'
     for i in range(numSongs):
         artist_name = hdf5_getters.get_artist_name(h5,i)
+
+        #Filter location
+        longi = hdf5_getters.get_artist_longitude(h5,i)
+        lat = hdf5_getters.get_artist_latitude(h5,i)
+        loc = hdf5_getters.get_artist_location(h5,i)
+        if math.isnan(lat) or math.isnan(longi):
+            #skip if no location
+            continue
+
+        #filter year
+        yr = hdf5_getters.get_year(h5,i)
+        if yr == 0:
+            #skip if no year
+            continue
+
+        #filter hotttness and familiarity
+        familiarity = hdf5_getters.get_artist_familiarity(h5,i)
+        hotttness = hdf5_getters.get_artist_hotttnesss(h5,i)
+        if familiarity<=0.0 or hotttness<=0.0:
+            #skip if no hotttness or familiarity computations
+            continue
+
+        #TODO:MAYBE filter on dance and energy
         if not artist_name in artist_map:
             #have not encountered the artist yet, so populate new map
             sub_map = {}
             sub_map['analysis_sample_rate'] = [hdf5_getters.get_analysis_sample_rate(h5,i)]
-            sub_map['artist_familiarity'] = hdf5_getters.get_artist_familiarity(h5,i)
-            sub_map['artist_hotttnesss'] = hdf5_getters.get_artist_hotttnesss(h5,i)
+            sub_map['artist_familiarity'] = familiarity
+            sub_map['artist_hotttnesss'] = hotttness
             sub_map['artist_id'] = hdf5_getters.get_artist_id(h5,i)
-            longi = hdf5_getters.get_artist_longitude(h5,i)
-            lat = hdf5_getters.get_artist_latitude(h5,i)
-            longi = None if math.isnan(longi) else longi
-            lat = None if math.isnan(lat) else lat
+            #longi = hdf5_getters.get_artist_longitude(h5,i)
+            #lat = hdf5_getters.get_artist_latitude(h5,i)
+            #longi = None if math.isnan(longi) else longi
+            #lat = None if math.isnan(lat) else lat
             sub_map['artist_latitude'] = lat
             sub_map['artist_longitude'] = longi
-            sub_map['artist_location'] = hdf5_getters.get_artist_location(h5,i)
+            sub_map['artist_location'] = loc
             sub_map['artist_terms'] = hdf5_getters.get_artist_terms(h5,i)
             #TODO:see if should weight by freq or weight for if the term matches one of the feature terms
             sub_map['artist_terms_freq'] = list(hdf5_getters.get_artist_terms_freq(h5,i))
@@ -303,7 +328,7 @@ def parse_aggregate_songs(file_name):
             sub_map['time_signature'] = [hdf5_getters.get_time_signature(h5,i)]
             sub_map['track_id'] = [hdf5_getters.get_track_id(h5,i)]
             #should year be binary since they can have many songs across years and should it be year:count
-            sub_map['year'] = [hdf5_getters.get_year(h5,i)]
+            sub_map['year'] = [yr]
 
             artist_map[artist_name] = sub_map
         else:
@@ -329,7 +354,7 @@ def parse_aggregate_songs(file_name):
             artist_map[artist_name]['time_signature'].append(hdf5_getters.get_time_signature(h5,i))
             artist_map[artist_name]['track_id'].append(hdf5_getters.get_track_id(h5,i))
             #should year be binary since they can have many songs across years and should it be year:count
-            artist_map[artist_name]['year'].append(hdf5_getters.get_year(h5,i))
+            artist_map[artist_name]['year'].append(yr)
     return artist_map
 
 def compute_avg(lst):
@@ -486,6 +511,7 @@ def parse_artist_map(artist_map, term_freq):
                 min_val = min_val if min_val != 10000 else 0
                 max_val = max(yrs)
                 avg_val = compute_avg(yrs)
+                flattened_artist_map['years'] = yrs
                 flattened_artist_map['y_max_year'] = max_val
                 flattened_artist_map['y_min_year'] = min_val
                 flattened_artist_map['y_avg_year'] = avg_val
@@ -586,10 +612,28 @@ if __name__ == '__main__':
     #normalize the list and make it a list of Datapoints
     data = scale_and_convert_maps(artist_list)
     #data holds a list of Datapoints (aka maps)
+    
     """
     print data[15]
+    print data[15].hotttnesss
+    print data[15].familiarity
     print data[15].artist_name
-    print data[15].artist_location
+    print data[15].artist_id
+    print data[15].artist_location==""
     print data[15].track_ids[0]
     """
+    
+    """
+    print str(len(data))
+    print data[17]
+    print data[17].years
+    print data[17].hotttnesss
+    print data[17].familiarity
+    print data[17].artist_name
+    print data[17].artist_id
+    print data[17].artist_location==""
+    print data[17].track_ids[0]
+    """
+    
+    
     print 'Done parsing and flattening song file'
