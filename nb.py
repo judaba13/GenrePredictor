@@ -5,7 +5,7 @@ Created on Nov 13, 2014
 '''
 
 import math 
-from Datapoint import Datapoint
+from Artistdata import *
 
 def nb(traindata, testdata):
     
