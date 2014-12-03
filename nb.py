@@ -5,7 +5,7 @@ Created on Nov 13, 2014
 '''
 
 import math 
-from Datapoint import Datapoint
+# from Datapoint import Datapoint
 import pickle
 from Artistdata import *
 
@@ -23,15 +23,15 @@ def nb(traindata, testdata):
         trainfeature.append(featuremat)
 #         TODO:
 #         trainlabel
-        trainlabel.append(d.familiarity)
-    
+        trainlabel.append(d.label)
+
     for d in testdata:
 #         TODO: add test label
         featuremat = []
         for feature in d:
             featuremat.append(d[feature])
         testfeature.append(featuremat)
-        testlabel.append(d.familiarity)
+        testlabel.append(d.label)
 
     labels = list(set(trainlabel))
     labelindex = []
@@ -40,7 +40,8 @@ def nb(traindata, testdata):
 
     results = []
     for testcase in testfeature:
-        # getting a result for a single test case. If there is only one test case, it will only run once.
+        # getting a result for a single test case. If there is only one test case, 
+        # it will only run once.
         probs = []
         for label in labels:
             # find probaility of each label and store the result 
@@ -57,9 +58,10 @@ def nb(traindata, testdata):
                 for i in range(len(testdata)):
                     newfeatures[i].append(testdata[i])
             # print newfeatures
-            print 'len newfeatures ',len(newfeatures[0])
-            print len(trainfeature[0])
-            # find PXY for each feature and mutiply to the final probability to find the prob of each label
+            # print 'len newfeatures ',len(newfeatures[0])
+            # print len(trainfeature[0])
+            # find PXY for each feature and mutiply to the final probability 
+            # to find the prob of each label
             for i in range(len(testcase)):
                 feature = testcase[i]
                 featurepool = newfeatures[i]
