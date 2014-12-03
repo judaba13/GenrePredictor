@@ -21,12 +21,9 @@ def nb(traindata, testdata):
         for feature in d:
             featuremat.append(d[feature])
         trainfeature.append(featuremat)
-#         TODO:
-#         trainlabel
         trainlabel.append(d.label)
 
     for d in testdata:
-#         TODO: add test label
         featuremat = []
         for feature in d:
             featuremat.append(d[feature])
@@ -66,7 +63,6 @@ def nb(traindata, testdata):
             for j in range(len(testcase)):
                 feature = testcase[j]
                 featurepool = newfeatures[j]
-                # print featurepool
                 PXY = float(featurepool.count(feature)+1)/(len(featurepool)+len(set(featurepool)))
                 nbprob = nbprob * PXY
             # storing the probability of each label cases
