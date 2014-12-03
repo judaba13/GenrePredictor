@@ -6,6 +6,7 @@ Created on Nov 13, 2014
 
 import math 
 from Datapoint import Datapoint
+import pickle
 
 def nb(traindata, testdata):
     
@@ -16,17 +17,17 @@ def nb(traindata, testdata):
     for d in traindata:
         featuremat = []
         for feature in d:
-            featuremat.append(feature)
+            featuremat.append(d[feature])
         trainfeature.append(featuremat)
 #         TODO:
 #         trainlabel
         trainlabel.append(d.familiarity)
-        
+    
     for d in testdata:
 #         TODO: add test label
         featuremat = []
         for feature in d:
-            featuremat.append(feature)
+            featuremat.append(d[feature])
         testfeature.append(featuremat)
         testlabel.append(d.familiarity)
 
@@ -47,16 +48,20 @@ def nb(traindata, testdata):
             nbprob = PY
             newfeatures = [[]]
             # change the direction of the feature matrix of the specific label case
-            for i in range(len(testcase)):
+            for i in range(len(testcase)-1):
                 newfeatures.append([])
             for idx in index:
                 testdata = trainfeature[idx]
                 for i in range(len(testdata)):
                     newfeatures[i].append(testdata[i])
+            # print newfeatures
+            print 'len newfeatures ',len(newfeatures[0])
+            print len(trainfeature[0])
             # find PXY for each feature and mutiply to the final probability to find the prob of each label
             for i in range(len(testcase)):
                 feature = testcase[i]
                 featurepool = newfeatures[i]
+                # print featurepool
                 PXY = (featurepool.count(feature)+1)/(len(featurepool)+len(set(featurepool)))
                 nbprob = nbprob * PXY
             # storing the probability of each label cases
@@ -65,7 +70,8 @@ def nb(traindata, testdata):
         maxprob = max(probs)
         results.append(labels[probs.index(maxprob)])
     # result contains the max probability label for each test case
-    print accuracy(results,testlabel)
+    print 'acc: ', accuracy(results,testlabel)
+    print results
     return results
 
 def accuracy(result, data):
@@ -81,3 +87,10 @@ def find(mat,element):
         if mat[i]==element:
             idx.append(i)
     return idx
+
+if __name__ == '__main__':
+    pkl_file = open('data.pkl', 'rb')
+    data = pickle.load(pkl_file)
+    pkl_file.close()
+
+    nb(data,data)
