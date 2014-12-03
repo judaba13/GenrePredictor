@@ -5,12 +5,10 @@ Created on Nov 13, 2014
 '''
 
 import math 
-<<<<<<< HEAD
 from Datapoint import Datapoint
 import pickle
-=======
 from Artistdata import *
->>>>>>> 163429684fdcf73f9abbb5cec3ffc7e440762f00
+
 
 def nb(traindata, testdata):
     
