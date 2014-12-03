@@ -21,7 +21,7 @@ class DataPoint(dict):
 		del self['artist_hotttnesss']
 
 	def __sub__(self, other):
-		return Datapoint({x: self[x]-other[x] for x in self if other[x]!=None})
+		return {x: self[x]-other[x] for x in self if other[x]!=None}
 
 """
 for d in data: # datapoint d, data as a list of Datapoint

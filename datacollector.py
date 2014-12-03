@@ -359,6 +359,7 @@ def parse_aggregate_songs(file_name):
             artist_map[artist_name]['track_id'].append(hdf5_getters.get_track_id(h5,i))
             #should year be binary since they can have many songs across years and should it be year:count
             artist_map[artist_name]['year'].append(yr)
+    h5.close()
     return artist_map
 
 def compute_avg(lst):
