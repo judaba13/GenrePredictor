@@ -29,6 +29,17 @@ def nb(traindata, testdata):
         testfeature.append(featuremat)
         testlabel.append(d.label)
 
+    vspace = [[]]
+    for j in range(len(trainfeature[0])):
+                vspace.append([])
+    for idx in range(len(trainfeature)):
+        testdata = trainfeature[idx]
+        for j in range(len(testdata)):
+            vspace[j].append(testdata[j])
+    v = []
+    for feature in vspace:
+        v.append(len(set(feature)))
+
     labels = list(set(trainlabel))
     labelindex = []
     for i in range(len(labels)):
@@ -47,7 +58,7 @@ def nb(traindata, testdata):
             nlabel = len(labelindex[labels.index(label)])
             PY = float(nlabel)/len(trainlabel)
             index = labelindex[labels.index(label)]
-            index = index[0:30]
+            index = index
             nbprob = PY
             newfeatures = [[]]
             # change the direction of the feature matrix of the specific label case
@@ -62,7 +73,7 @@ def nb(traindata, testdata):
             for j in range(len(testcase)):
                 feature = testcase[j]
                 featurepool = newfeatures[j]
-                PXY = float(featurepool.count(feature)+1)/(len(featurepool)+len(set(featurepool)))
+                PXY = float(featurepool.count(feature)+1)/(len(featurepool)+v[j])
                 nbprob = nbprob * PXY
             # storing the probability of each label cases
             probs.append(nbprob)
@@ -71,6 +82,7 @@ def nb(traindata, testdata):
         results.append(labels[probs.index(maxprob)])
     # result contains the max probability label for each test case
     print 'acc: ', accuracy(results,testlabel)
+    print 'pre: ', precision(results,testlabel)
     return results
 
 def accuracy(result, data):
@@ -80,6 +92,13 @@ def accuracy(result, data):
             match = match+1
     return float(match)/len(result)
 
+def precision(result, data):
+    match = 0
+    for i in range(len(result)):
+        if result[i]==1 and data[i]==1:
+            match = match+1
+    return float(match)/result.count(1)
+
 def find(mat,element):
     idx = []
     for i in range(len(mat)):
@@ -88,8 +107,11 @@ def find(mat,element):
     return idx
 
 if __name__ == '__main__':
-    pkl_file = open('data.pkl', 'rb')
-    data = pickle.load(pkl_file)
-    pkl_file.close()
+    train_file = open('train.pkl', 'rb')
+    test_file = open('test.pkl', 'rb')
+    traindata = pickle.load(train_file)
+    testdata = pickle.load(test_file)
+    train_file.close()
+    test_file.close()
 
-    nb(data,data)
+    nb(traindata,testdata)
