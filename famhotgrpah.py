@@ -11,10 +11,10 @@ plt.title("hotttnesss vs familiarity")
 plt.xlabel("familiarity")
 plt.ylabel("hotttnesss")
 plt.plot(fam, hot, '.')
-fThreshx = [0.6,0.6]
+fThreshx = [0.65,0.65]
 fThreshy = [0, 1]
 hThreshx = [0, 1]
-hThreshy = [0.425, 0.425]
+hThreshy = [0.4, 0.4]
 
 plt.plot(fThreshx, fThreshy, 'r-')
 plt.plot(hThreshx, hThreshy, 'r-')
