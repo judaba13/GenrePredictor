@@ -5,7 +5,6 @@ Created on Nov 13, 2014
 '''
 
 import math 
-# from Datapoint import Datapoint
 import pickle
 from Artistdata import *
 
