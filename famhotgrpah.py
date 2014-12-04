@@ -18,5 +18,5 @@ hThreshy = [0.4, 0.4]
 
 plt.plot(fThreshx, fThreshy, 'r-')
 plt.plot(hThreshx, hThreshy, 'r-')
-plt.show()
 plt.savefig("famhotgraph.png")
+plt.show()

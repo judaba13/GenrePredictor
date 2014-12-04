@@ -2,6 +2,7 @@ import random
 from Artistdata import *
 from numpy import *
 from util import *
+from matplotlib import pyplot as plt
 
 def cosineSimilarity(x, y):
 	return dot(x,y) / (norm(x) * norm(y))
@@ -67,7 +68,7 @@ def test(X, T, k, K, classify):
 	accuracy = (tp + tn) / len(X)
 	precision = tp / (tp + fp) if (tp + fp > 0) else None
 	recall = tp / (tp + fn) if (tp + fn > 0) else None
-	return (accuracy, precision, recall)
+	return [accuracy, precision, recall]
 
 def testMajority(X, T, k, K):
 	return test(X, T, k, K, classifyMajority)
@@ -75,21 +76,79 @@ def testMajority(X, T, k, K):
 def testRegression(X, T, k, K):
 	return test(X, T, k, K, classifyRegression)
 
+def plotCV(results, f, title):
+	x = [results[r][3] for r in results if results[r][0] != None]
+	y = [results[r][0] for r in results if results[r][0] != None]
+	plt.figure()
+	plt.title(title+ ": " + str(f) + "-fold CV Accuracy vs k")
+	plt.xlabel("k")
+	plt.ylabel("average accuracy")
+	plt.plot(x, y, ".")
+	plt.savefig(title + " accuracy.png")
+	x = [results[r][3] for r in results if results[r][1] != None]
+	y = [results[r][1] for r in results if results[r][1] != None]
+	plt.figure()
+	plt.title(title+ ": " + str(f) + "-fold CV Precision vs k")
+	plt.xlabel("k")
+	plt.ylabel("average precision")
+	plt.plot(x, y, ".")
+	plt.savefig(title + " precision.png")
+
+def crossValidate(X, T, kVals, K, testF, f, title):
+	random.shuffle(X)
+	size = float(len(X))/f
+	results = {k:[0., 0., 0.] for k in kVals}
+	counts = {k:[0, 0, 0] for k in kVals}
+	for i in range(f):
+		for k in kVals:
+			result = testF(X[0:int(i*size)]+X[int((i+1)*size):], X[int(i*size):int((i+1)*size)], k, K)
+			for j in range(3):
+				if result[j] != None:
+					results[k][j] += result[j]
+					counts[k][j] += 1
+	for k in kVals:
+		for j in range(3):
+			if counts[k][j] > 0:
+				results[k][j] /= f
+			else:
+				results[k][j] = None
+		results[k].append(k)
+	k = max(results, key=lambda r: results[r][0])
+	bestAccuracy = results[k]
+	print "Best Accuracy: ", bestAccuracy
+	k = max(results, key=lambda r: results[r][1])
+	bestPrecision = results[k]
+	print "Best Precision:", bestPrecision
+	k = max(results, key=lambda r: results[r][2])
+	bestRecall = results[k]
+	print "Best Recall:   ", bestRecall
+	plotCV(results, f, title)
+	return (testF(X, T, bestAccuracy[3], K), testF(X, T, bestPrecision[3], K), testF(X, T, bestRecall[3], K))
+
+def crossValidMajority(X, T, kVals, K, f, title):
+	return crossValidate(X, T, kVals, K, testMajority, f, "kNN Majority "+title)
+
+def crossValidRegresion(X, T, kVals, K, f, title):
+	return crossValidate(X, T, kVals, K, testRegression, f, "kNN Regression "+title)
+
 def main():
-	import datacollector
-	X = datacollector.generate_data()
-	print testMajority(X, X, 1, euclideanSimilarity)
-	print testRegression(X, X, 1, euclideanSimilarity)
-	print testMajority(X, X, 2, euclideanSimilarity)
-	print testRegression(X, X, 2, euclideanSimilarity)
-	print testMajority(X, X, 3, euclideanSimilarity)
-	print testRegression(X, X, 3, euclideanSimilarity)
-	print testMajority(X, X, 4, euclideanSimilarity)
-	print testRegression(X, X, 4, euclideanSimilarity)
-	print testMajority(X, X, 5, euclideanSimilarity)
-	print testRegression(X, X, 5, euclideanSimilarity)
-	print testMajority(X, X, 10, euclideanSimilarity)
-	print testRegression(X, X, 10, euclideanSimilarity)
+	import pickle
+	print "Loading data..."
+	f = open('train.pkl')
+	X = pickle.load(f)
+	f.close()
+	f = open('test.pkl')
+	T = pickle.load(f)
+	f.close()
+	kVals = [1,2,3,5,7,10,13,17,21,26,31,37,43,50]
+	print "Testing euclidean majority..."
+	print crossValidMajority(X, T, kVals, euclideanSimilarity, 3, "Euclidean")
+	print "Testing euclidean regression..."
+	print crossValidRegresion(X, T, kVals, euclideanSimilarity, 3, "Euclidean")
+	print "Testing cosine majority..."
+	print crossValidMajority(X, T, kVals, cosineSimilarity, 3, "Cosine")
+	print "Testing cosine regression..."
+	print crossValidRegresion(X, T, kVals, cosineSimilarity, 3, "Cosine")
 
 main()
 
