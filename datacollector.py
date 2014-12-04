@@ -12,6 +12,7 @@ from Artistdata import *
 import hdf5_getters
 import nb
 import pickle
+import random
 try:
     import sqlite3 as db
 except ImportError:
@@ -290,7 +291,6 @@ def parse_aggregate_songs(file_name):
         if not artist_name in artist_map:
             #have not encountered the artist yet, so populate new map
             sub_map = {}
-            sub_map['analysis_sample_rate'] = [hdf5_getters.get_analysis_sample_rate(h5,i)]
             sub_map['artist_familiarity'] = familiarity
             sub_map['artist_hotttnesss'] = hotttness
             sub_map['artist_id'] = hdf5_getters.get_artist_id(h5,i)
@@ -341,7 +341,6 @@ def parse_aggregate_songs(file_name):
             dance = None if dance == 0.0 else dance
             energy = hdf5_getters.get_energy(h5,i)
             energy = None if energy == 0.0 else energy
-            artist_map[artist_name]['analysis_sample_rate'].append(hdf5_getters.get_analysis_sample_rate(h5,i))
             artist_map[artist_name]['danceability'].append(dance)
             artist_map[artist_name]['duration'].append(hdf5_getters.get_duration(h5,i))
             artist_map[artist_name]['end_of_fade_in'].append(hdf5_getters.get_end_of_fade_in(h5,i))
@@ -379,8 +378,8 @@ def compute_avg(lst):
         return lst_sum / not_none_total
 
 #global variables that will be used to scale features
-analysis_sample_rate_min=artist_longitude_min=artist_latitude_min=duration_min=end_of_fade_in_min=loudness_min=start_of_fade_out_min=tempo_min = sys.float_info.max
-analysis_sample_rate_max=artist_longitude_max=artist_latitude_max=duration_max=end_of_fade_in_max=loudness_max=start_of_fade_out_max=tempo_max= sys.float_info.min
+artist_longitude_min=artist_latitude_min=duration_min=end_of_fade_in_min=loudness_min=start_of_fade_out_min=tempo_min = sys.float_info.max
+artist_longitude_max=artist_latitude_max=duration_max=end_of_fade_in_max=loudness_max=start_of_fade_out_max=tempo_max= sys.float_info.min
 
 def parse_artist_map(artist_map, term_freq):
     """
@@ -389,7 +388,7 @@ def parse_artist_map(artist_map, term_freq):
     Takes in a map of terms:freq for the top terms associated with artists to be made into binary features
     Takes care of flattening features such as song features
     """
-    global analysis_sample_rate_min,artist_longitude_min,artist_latitude_min,duration_min,end_of_fade_in_min,loudness_min,start_of_fade_out_min,tempo_min,analysis_sample_rate_max,artist_longitude_max,artist_latitude_max,duration_max,end_of_fade_in_max,loudness_max,start_of_fade_out_max,tempo_max
+    global artist_longitude_min,artist_latitude_min,duration_min,end_of_fade_in_min,loudness_min,start_of_fade_out_min,tempo_min,artist_longitude_max,artist_latitude_max,duration_max,end_of_fade_in_max,loudness_max,start_of_fade_out_max,tempo_max
     artist_list = []
     print "Flattening artist map"
     for artist in artist_map:
@@ -398,14 +397,7 @@ def parse_artist_map(artist_map, term_freq):
         a_map = artist_map[artist]
         for feature in a_map:
             #goes through each feature and extracts it properly
-            if feature == 'analysis_sample_rate':
-                sr = compute_avg(a_map[feature])
-                if sr < analysis_sample_rate_min:
-                    analysis_sample_rate_min = sr
-                if sr > analysis_sample_rate_max:
-                    analysis_sample_rate_max = sr
-                flattened_artist_map['analysis_sample_rate'] = sr
-            elif feature == 'artist_familiarity':
+            if feature == 'artist_familiarity':
                 flattened_artist_map['artist_familiarity'] = a_map[feature]
             elif feature == 'artist_hotttnesss':
                 flattened_artist_map['artist_hotttnesss'] = a_map[feature]
@@ -421,7 +413,7 @@ def parse_artist_map(artist_map, term_freq):
             elif feature == 'artist_longitude':
                 lng = a_map[feature]
                 if lng and lng < artist_longitude_min:
-                    artist_latitude_min = lng
+                    artist_longitude_min = lng
                 if lng > artist_longitude_max:
                     artist_longitude_max = lng
                 flattened_artist_map['artist_longitude'] = lng
@@ -541,6 +533,18 @@ def scale(old_val,old_min,old_max):
         new_val = (((old_val - old_min) * new_range) / old_range) + new_min
     return new_val
 
+def bin_data(val):
+    num_bins = 10
+    bin_size = 1.0/num_bins
+    #floor(val/bin_size)*bin_size
+    return round(math.floor(val/bin_size)*bin_size,1)
+
+def bin_year(yr):
+    min_year = 1920
+    num_bins = 18
+    bin_size = 5
+    return (math.floor((yr-min_year)/bin_size)*bin_size+min_year)
+
 def scale_and_convert_maps(artist_maps):
     """
     Given a list of flattened versions of the artist_maps,
@@ -548,20 +552,53 @@ def scale_and_convert_maps(artist_maps):
     and converts the maps to the Datapoint class
     """
     data_points = [] #the final list of Datapoint maps
+    #not_data = []
     for artist_map in artist_maps:
         #for each map, scale the values needed to be scaled
         #then convert it to Datapoint and append it to list
-        artist_map['analysis_sample_rate'] = scale(artist_map['analysis_sample_rate'],analysis_sample_rate_min,analysis_sample_rate_max)
-        artist_map['artist_longitude'] = scale(artist_map['artist_longitude'],artist_longitude_min,artist_longitude_max)
-        artist_map['artist_latitude'] = scale(artist_map['artist_latitude'],artist_latitude_min,artist_latitude_max)
-        artist_map['duration'] = scale(artist_map['duration'],duration_min,duration_max)
-        artist_map['end_of_fade_in'] = scale(artist_map['end_of_fade_in'],end_of_fade_in_min,end_of_fade_in_max)
-        artist_map['loudness'] = scale(artist_map['loudness'],loudness_min,loudness_max)
-        artist_map['start_of_fade_out'] = scale(artist_map['start_of_fade_out'],start_of_fade_out_min,start_of_fade_out_max)
-        artist_map['tempo'] = scale(artist_map['tempo'],tempo_min,tempo_max)
+        artist_map['artist_longitude'] = bin_data(scale(artist_map['artist_longitude'],artist_longitude_min,artist_longitude_max))
+        artist_map['artist_latitude'] = bin_data(scale(artist_map['artist_latitude'],artist_latitude_min,artist_latitude_max))
+        artist_map['duration'] = bin_data(scale(artist_map['duration'],duration_min,duration_max))
+        artist_map['end_of_fade_in'] = bin_data(scale(artist_map['end_of_fade_in'],end_of_fade_in_min,end_of_fade_in_max))
+        artist_map['loudness'] = bin_data(scale(artist_map['loudness'],loudness_min,loudness_max))
+        artist_map['start_of_fade_out'] = bin_data(scale(artist_map['start_of_fade_out'],start_of_fade_out_min,start_of_fade_out_max))
+        artist_map['tempo'] = bin_data(scale(artist_map['tempo'],tempo_min,tempo_max))
+        #bin
+        artist_map['y_max_year'] = bin_year(artist_map['y_max_year'])
+        artist_map['y_min_year'] = bin_year(artist_map['y_min_year'])
+        artist_map['y_avg_year'] = bin_year(artist_map['y_avg_year'])
+        artist_map['mode_0'] = bin_data(artist_map['mode_0'])
+        artist_map['mode_1'] = bin_data(artist_map['mode_1'])
+        artist_map['energy'] = bin_data(artist_map['energy'])
+        artist_map['danceability'] = bin_data(artist_map['danceability'])
+        artist_map['time_signature_3'] = bin_data(artist_map['time_signature_3'])
+        artist_map['time_signature_4'] = bin_data(artist_map['time_signature_4'])
+        artist_map['time_signature_5'] = bin_data(artist_map['time_signature_5'])
+        artist_map['time_signature_6'] = bin_data(artist_map['time_signature_6'])
+        artist_map['time_signature_7'] = bin_data(artist_map['time_signature_7'])
+        artist_map['song_hotttnesss'] = bin_data(artist_map['song_hotttnesss'])
+        artist_map['key_0'] = bin_data(artist_map['key_0'])
+        artist_map['key_1'] = bin_data(artist_map['key_1'])
+        artist_map['key_2'] = bin_data(artist_map['key_2'])
+        artist_map['key_3'] = bin_data(artist_map['key_3'])
+        artist_map['key_4'] = bin_data(artist_map['key_4'])
+        artist_map['key_5'] = bin_data(artist_map['key_5'])
+        artist_map['key_6'] = bin_data(artist_map['key_6'])
+        artist_map['key_7'] = bin_data(artist_map['key_7'])
+        artist_map['key_8'] = bin_data(artist_map['key_8'])
+        artist_map['key_9'] = bin_data(artist_map['key_9'])
+        artist_map['key_10'] = bin_data(artist_map['key_10'])
+        artist_map['key_11'] = bin_data(artist_map['key_11'])
+
 
         #convert each artist map into a Datapoint and add it to list
         datapt = DataPoint(artist_map)
+        """
+        if datapt.label == 1:
+            not_data.append(artist_map)
+        elif random.random() >= 0.85:
+            not_data.append(artist_map)
+        """
         data_points.append(datapt)
 
     return data_points
@@ -645,6 +682,35 @@ if __name__ == '__main__':
     output.close()
 
     """
+    hott_fam_list = []
+    plus1 = 0
+    names = set()
+    for d in data:
+        if d.label == 1:
+            plus1 += 1
+            names.add(d.artist_name)
+        hott_fam_list.append((d.familiarity,d.hotttnesss))
+    print ""
+    print ""
+    print names
+    """
+    """
+    n_d = []
+    c = 40
+    HOT_THRESH = 0.425
+    FAM_THRESH = 0.6
+    for d in not_data:
+        label = 1 if d['artist_hotttnesss'] >= HOT_THRESH and d['artist_familiarity'] <= FAM_THRESH else -1
+        if label==1:
+            n_d.append(d)
+        elif c>0:
+            n_d.append(d)
+            c-=1
+    print n_d
+    """
+
+
+    """
     print data2[15]
     print data2[15].hotttnesss
     print data2[15].familiarity
@@ -656,7 +722,7 @@ if __name__ == '__main__':
     
     
     
-    """
+    print ""
     print str(len(data))
     print data[17]
     print data[17].years
@@ -666,7 +732,8 @@ if __name__ == '__main__':
     print data[17].artist_id
     print data[17].artist_location==""
     print data[17].track_ids[0]
-    """
+    
+    
     
     
     print 'Done parsing and flattening song file'

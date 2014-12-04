@@ -1,5 +1,5 @@
-HOT_THRESH = 0.425
-FAM_THRESH = 0.6
+HOT_THRESH = 0.37
+FAM_THRESH = 0.65
 
 class DataPoint(dict):
 	def __init__(self, other):
