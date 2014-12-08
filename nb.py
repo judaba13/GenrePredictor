@@ -15,19 +15,47 @@ def nb(traindata, testdata):
     testlabel = []
     trainfeature = []
     testfeature = []
+    trainfile = open('traindata.txt','a')
     for d in traindata:
+        if d.label==0:
+            trainfile.write(str(-1))
+        else:
+            trainfile.write(str(d.label))
+        trainfile.write(' ')
         featuremat = []
+        count = 1
         for feature in d:
+            trainfile.write(str(count))
+            trainfile.write(':')
+            trainfile.write(str(d[feature]))
+            trainfile.write(' ')
+            count = count + 1
             featuremat.append(d[feature])
         trainfeature.append(featuremat)
         trainlabel.append(d.label)
+        trainfile.write('\n')
+    trainfile.close()
 
+    testfile = open('testdata.txt','a')
     for d in testdata:
+        if d.label==0:
+            testfile.write(-1)
+        else:
+            testfile.write(str(d.label))
+        testfile.write(' ')
         featuremat = []
+        count = 1
         for feature in d:
+            testfile.write(str(count))
+            testfile.write(':')
+            testfile.write(str(d[feature]))
+            testfile.write(' ')
+            count = count+1
             featuremat.append(d[feature])
+        testfile.write('\n')
         testfeature.append(featuremat)
         testlabel.append(d.label)
+    testfile.close()
 
     vspace = [[]]
     for j in range(len(trainfeature[0])):
@@ -39,7 +67,7 @@ def nb(traindata, testdata):
     v = []
     for feature in vspace:
         v.append(len(set(feature)))
-
+    print trainlabel.count(1),' / ',len(trainlabel)
     labels = list(set(trainlabel))
     labelindex = []
     for i in range(len(labels)):
@@ -58,7 +86,6 @@ def nb(traindata, testdata):
             nlabel = len(labelindex[labels.index(label)])
             PY = float(nlabel)/len(trainlabel)
             index = labelindex[labels.index(label)]
-            index = index
             nbprob = PY
             newfeatures = [[]]
             # change the direction of the feature matrix of the specific label case
