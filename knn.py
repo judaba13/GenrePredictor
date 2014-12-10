@@ -1,4 +1,5 @@
 import random
+import sys
 from Artistdata import *
 from numpy import *
 from util import *
@@ -140,15 +141,16 @@ def main():
 	f = open('test.pkl')
 	T = pickle.load(f)
 	f.close()
-	kVals = [1,2,3,5,7,10,13,17,21,26,31,37,43,50]
-	print "Testing euclidean majority..."
-	print crossValidMajority(X, T, kVals, euclideanSimilarity, 3, "Euclidean")
+	normalize01(X, T)
+	kVals = [1,2,3,5,7,10,13,17,21,26,31,37,43,50,57]
 	print "Testing euclidean regression..."
-	print crossValidRegresion(X, T, kVals, euclideanSimilarity, 3, "Euclidean")
+	print crossValidRegresion(X, T, kVals, euclideanSimilarity, 7, "Euclidean")
+	print "Testing euclidean majority..."
+	print crossValidMajority(X, T, kVals, euclideanSimilarity, 7, "Euclidean")
 	print "Testing cosine majority..."
-	print crossValidMajority(X, T, kVals, cosineSimilarity, 3, "Cosine")
+	print crossValidMajority(X, T, kVals, cosineSimilarity, 7, "Cosine")
 	print "Testing cosine regression..."
-	print crossValidRegresion(X, T, kVals, cosineSimilarity, 3, "Cosine")
+	print crossValidRegresion(X, T, kVals, cosineSimilarity, 7, "Cosine")
 
 main()
 
