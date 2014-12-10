@@ -216,6 +216,7 @@ def get_mbtag_freq(n, tags):
     con = None
     try:
         con = db.connect('subset_artist_term.db')
+        #con = db.connect('subset_artist_term_new.db')
         c = con.cursor()
         table = 'artist_mbtag' if tags else 'artist_term'
         q = "SELECT * FROM %s" % table
@@ -244,7 +245,7 @@ def get_mbtag_freq(n, tags):
     return ['unexpected end of function']
 
 
-def parse_aggregate_songs(file_name):
+def parse_aggregate_songs(file_name,file_name2,artist_map):
     """
     Given an aggregate filename and artist_map in the format
     {artist_name: {data pertaining to artist}}
@@ -257,7 +258,7 @@ def parse_aggregate_songs(file_name):
 
     -song info is a map from attributename:[values]
     """
-    artist_map = {}
+    #artist_map = {}
     h5 = hdf5_getters.open_h5_file_read(file_name)
     numSongs = hdf5_getters.get_num_songs(h5)
     print 'Parsing song file...'
@@ -358,8 +359,111 @@ def parse_aggregate_songs(file_name):
             artist_map[artist_name]['track_id'].append(hdf5_getters.get_track_id(h5,i))
             #should year be binary since they can have many songs across years and should it be year:count
             artist_map[artist_name]['year'].append(yr)
-    h5.close()
-    return artist_map
+
+    h5 = hdf5_getters.open_h5_file_read(file_name2)
+    numSongs = hdf5_getters.get_num_songs(h5)
+    print 'Parsing song file2...'
+    for i in range(numSongs):
+        song_id = hdf5_getters.get_track_id(h5,i)
+        artist_name = hdf5_getters.get_artist_name(h5,i)
+        if artist_name in artist_map and song_id in artist_map[artist_name]['track_id']:
+            continue
+
+        #Filter location
+        longi = hdf5_getters.get_artist_longitude(h5,i)
+        lat = hdf5_getters.get_artist_latitude(h5,i)
+        loc = hdf5_getters.get_artist_location(h5,i)
+        if math.isnan(lat) or math.isnan(longi):
+            #skip if no location
+            continue
+
+        #filter year
+        yr = hdf5_getters.get_year(h5,i)
+        if yr == 0:
+            #skip if no year
+            continue
+
+        #filter hotttness and familiarity
+        familiarity = hdf5_getters.get_artist_familiarity(h5,i)
+        hotttness = hdf5_getters.get_artist_hotttnesss(h5,i)
+        if familiarity<=0.0 or hotttness<=0.0:
+            #skip if no hotttness or familiarity computations
+            continue
+
+        #TODO:MAYBE filter on dance and energy
+        timbre = hdf5_getters.get_segments_timbre(h5,i)
+        #timbre[#] gives len 12 array so for each arr in timbre, add up to get segment and add to corresponding 12 features and avg across each
+        if not artist_name in artist_map:
+            #have not encountered the artist yet, so populate new map
+            sub_map = {}
+            sub_map['artist_familiarity'] = familiarity
+            sub_map['artist_hotttnesss'] = hotttness
+            sub_map['artist_id'] = hdf5_getters.get_artist_id(h5,i)
+            #longi = hdf5_getters.get_artist_longitude(h5,i)
+            #lat = hdf5_getters.get_artist_latitude(h5,i)
+            #longi = None if math.isnan(longi) else longi
+            #lat = None if math.isnan(lat) else lat
+            sub_map['artist_latitude'] = lat
+            sub_map['artist_longitude'] = longi
+            sub_map['artist_location'] = loc
+            sub_map['artist_terms'] = hdf5_getters.get_artist_terms(h5,i)
+            #TODO:see if should weight by freq or weight for if the term matches one of the feature terms
+            sub_map['artist_terms_freq'] = list(hdf5_getters.get_artist_terms_freq(h5,i))
+            sub_map['artist_terms_weight'] = list(hdf5_getters.get_artist_terms_weight(h5,i))
+
+            #song-sepcific data
+            #TODO COMPUTE AN AVG TIMBRE FOR A SONG BY IDEA:
+            #SUMMING DOWN EACH 12 VECTOR FOR EACH PT IN SONG AND AVG THIS ACROSS SONG
+            dance = hdf5_getters.get_danceability(h5,i)
+            dance = None if dance == 0.0 else dance
+            energy = hdf5_getters.get_energy(h5,i)
+            energy = None if energy == 0.0 else energy
+            sub_map['danceability'] = [dance]
+            sub_map['duration'] = [hdf5_getters.get_duration(h5,i)]
+            sub_map['end_of_fade_in'] = [hdf5_getters.get_end_of_fade_in(h5,i)]
+            sub_map['energy'] = [energy]
+            #since each song has a key, ask if feature for keys should be num of songs that appear in that key or
+            #just binary if any of their songs has that key or just be avg of songs with that key
+            #same for mode, since its either major or minor...should it be count or avg.?
+            sub_map['key'] = [hdf5_getters.get_key(h5,i)]
+            sub_map['loudness'] = [hdf5_getters.get_loudness(h5,i)]
+            sub_map['mode'] = [hdf5_getters.get_mode(h5,i)] #major or minor 0/1
+            s_hot = hdf5_getters.get_song_hotttnesss(h5,i)
+            s_hot = None if math.isnan(s_hot) else s_hot
+            sub_map['song_hotttnesss'] = [s_hot]
+            sub_map['start_of_fade_out'] = [hdf5_getters.get_start_of_fade_out(h5,i)]
+            sub_map['tempo'] = [hdf5_getters.get_tempo(h5,i)]
+            #should time signature be count as well? binary?
+            sub_map['time_signature'] = [hdf5_getters.get_time_signature(h5,i)]
+            sub_map['track_id'] = [hdf5_getters.get_track_id(h5,i)]
+            #should year be binary since they can have many songs across years and should it be year:count
+            sub_map['year'] = [yr]
+
+            artist_map[artist_name] = sub_map
+        else:
+            #artist already exists, so get its map and update song fields
+            dance = hdf5_getters.get_danceability(h5,i)
+            dance = None if dance == 0.0 else dance
+            energy = hdf5_getters.get_energy(h5,i)
+            energy = None if energy == 0.0 else energy
+            artist_map[artist_name]['danceability'].append(dance)
+            artist_map[artist_name]['duration'].append(hdf5_getters.get_duration(h5,i))
+            artist_map[artist_name]['end_of_fade_in'].append(hdf5_getters.get_end_of_fade_in(h5,i))
+            artist_map[artist_name]['energy'].append(energy)
+            artist_map[artist_name]['key'].append(hdf5_getters.get_key(h5,i))
+            artist_map[artist_name]['loudness'].append(hdf5_getters.get_loudness(h5,i))
+            artist_map[artist_name]['mode'].append(hdf5_getters.get_mode(h5,i)) #major or minor 0/1
+            s_hot = hdf5_getters.get_song_hotttnesss(h5,i)
+            s_hot = None if math.isnan(s_hot) else s_hot
+            artist_map[artist_name]['song_hotttnesss'].append(s_hot)
+            artist_map[artist_name]['start_of_fade_out'].append(hdf5_getters.get_start_of_fade_out(h5,i))
+            artist_map[artist_name]['tempo'].append(hdf5_getters.get_tempo(h5,i))
+            #should time signature be count as well? binary?
+            artist_map[artist_name]['time_signature'].append(hdf5_getters.get_time_signature(h5,i))
+            artist_map[artist_name]['track_id'].append(hdf5_getters.get_track_id(h5,i))
+            #should year be binary since they can have many songs across years and should it be year:count
+            artist_map[artist_name]['year'].append(yr)
+    #return artist_map
 
 def compute_avg(lst):
     """
@@ -556,6 +660,15 @@ def scale_and_convert_maps(artist_maps):
     for artist_map in artist_maps:
         #for each map, scale the values needed to be scaled
         #then convert it to Datapoint and append it to list
+        """
+        artist_map['artist_longitude'] = scale(artist_map['artist_longitude'],artist_longitude_min,artist_longitude_max)
+        artist_map['artist_latitude'] = scale(artist_map['artist_latitude'],artist_latitude_min,artist_latitude_max)
+        artist_map['duration'] = scale(artist_map['duration'],duration_min,duration_max)
+        artist_map['end_of_fade_in'] = scale(artist_map['end_of_fade_in'],end_of_fade_in_min,end_of_fade_in_max)
+        artist_map['loudness'] = scale(artist_map['loudness'],loudness_min,loudness_max)
+        artist_map['start_of_fade_out'] = scale(artist_map['start_of_fade_out'],start_of_fade_out_min,start_of_fade_out_max)
+        artist_map['tempo'] = scale(artist_map['tempo'],tempo_min,tempo_max)
+        """
         artist_map['artist_longitude'] = bin_data(scale(artist_map['artist_longitude'],artist_longitude_min,artist_longitude_max))
         artist_map['artist_latitude'] = bin_data(scale(artist_map['artist_latitude'],artist_latitude_min,artist_latitude_max))
         artist_map['duration'] = bin_data(scale(artist_map['duration'],duration_min,duration_max))
@@ -564,6 +677,7 @@ def scale_and_convert_maps(artist_maps):
         artist_map['start_of_fade_out'] = bin_data(scale(artist_map['start_of_fade_out'],start_of_fade_out_min,start_of_fade_out_max))
         artist_map['tempo'] = bin_data(scale(artist_map['tempo'],tempo_min,tempo_max))
         #bin
+        
         artist_map['y_max_year'] = bin_year(artist_map['y_max_year'])
         artist_map['y_min_year'] = bin_year(artist_map['y_min_year'])
         artist_map['y_avg_year'] = bin_year(artist_map['y_avg_year'])
@@ -591,6 +705,7 @@ def scale_and_convert_maps(artist_maps):
         artist_map['key_11'] = bin_data(artist_map['key_11'])
 
 
+
         #convert each artist map into a Datapoint and add it to list
         datapt = DataPoint(artist_map)
         """
@@ -607,14 +722,19 @@ def generate_data():
     """
     This is the master function to call that returns a list of Datapoints!
     """
+
     #Gets the most popular artist tags
     res = get_mbtag_freq(100, False) #use top 100 results for genres [eco name:0/1] in feature map
     freq_map = {}
     for pair in res:
         freq_map[pair[0]] = pair[1]
 
+
     #Takes an aggregated song file (created from create_summary_file.py) and parses it
-    artist_map = parse_aggregate_songs('agg_all_songs.h5')
+    artist_map = {}
+    parse_aggregate_songs('agg_all_songs.h5','new_songs.h5',artist_map)
+    #artist_map = parse_aggregate_songs('new_songs.h5')
+    #artist_map = parse_aggregate_songs('agg_all_songs.h5')
     #flattens the artist map into a list
     artist_list = parse_artist_map(artist_map, freq_map)
     #normalize the list and make it a list of Datapoints
@@ -644,6 +764,9 @@ if __name__ == '__main__':
     freq_map = {}
     for pair in res:
         freq_map[pair[0]] = pair[1]
+    """
+
+    """
 
     #can compare unicode to normal string
     #TODO: LOOK UP GMAP API TO CONVERT LOCATION TO LONG/LAT
@@ -677,6 +800,7 @@ if __name__ == '__main__':
     """
     data = generate_data()
     #pickle stuff
+    #output = open('data_nobucket.pkl','wb')
     output = open('data.pkl','wb')
     pickle.dump(data,output)
     output.close()
@@ -687,13 +811,13 @@ if __name__ == '__main__':
     names = set()
     for d in data:
         if d.label == 1:
+            #print d.artist_name,d.familiarity,d.hotttnesss
             plus1 += 1
             names.add(d.artist_name)
         hott_fam_list.append((d.familiarity,d.hotttnesss))
-    print ""
-    print ""
     print names
     """
+    
     """
     n_d = []
     c = 40
@@ -709,7 +833,6 @@ if __name__ == '__main__':
     print n_d
     """
 
-
     """
     print data2[15]
     print data2[15].hotttnesss
@@ -719,8 +842,7 @@ if __name__ == '__main__':
     print data2[15].artist_location==""
     print data2[15].track_ids[0]
     """
-    
-    
+
     
     print ""
     print str(len(data))
@@ -732,7 +854,7 @@ if __name__ == '__main__':
     print data[17].artist_id
     print data[17].artist_location==""
     print data[17].track_ids[0]
-    
+
     
     
     
