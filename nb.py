@@ -15,6 +15,8 @@ def nb(traindata, testdata):
     testlabel = []
     trainfeature = []
     testfeature = []
+
+# reading the train data
     trainfile = open('traindata.txt','a')
     for d in traindata:
         if d.label==0:
@@ -36,6 +38,7 @@ def nb(traindata, testdata):
         trainfile.write('\n')
     trainfile.close()
 
+# reading the test data
     testfile = open('testdata.txt','a')
     for d in testdata:
         if d.label==0:
@@ -57,6 +60,7 @@ def nb(traindata, testdata):
         testlabel.append(d.label)
     testfile.close()
 
+# running Naive Bayes
     vspace = [[]]
     for j in range(len(trainfeature[0])):
                 vspace.append([])
@@ -111,6 +115,7 @@ def nb(traindata, testdata):
     print 'acc: ', accuracy(results,testlabel)
     print 'pre: ', precision(results,testlabel)
     return results
+
 
 def accuracy(result, data):
     match = 0
