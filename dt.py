@@ -1,3 +1,8 @@
+'''
+CS4780 Final Project
+Decision Tree
+@author: Kelsey Duncan ked83
+'''
 import math
 import pickle
 from Artistdata import *
@@ -16,6 +21,7 @@ class ID3(object):
         self.depth = depth
         self.root = root
 
+    #set nots and hots for 'data'
     def setNums(self, data):
         numHots = 0
         numNots = 0
@@ -28,6 +34,7 @@ class ID3(object):
         self.nots = numNots
         self.total = float(len(data))
     
+    #return the nots and hots for 'data' subset
     def getNotsAndHots(self, data):
         nots = 0
         hots = 0
@@ -38,6 +45,7 @@ class ID3(object):
                 hots+= 1
         return (nots, hots)
     
+    #get entropy for subset of 'nots' and 'hots'
     def entropy(self, nots, hots):
         if nots is None:
             nots = self.nots
@@ -49,7 +57,7 @@ class ID3(object):
         d = -(float(nots)/float(total))*(math.log(float(nots)/float(total))/math.log(float(2.0))) - (float(hots)/float(total))*(math.log(float(hots)/float(total))/math.log(float(2.0)))
         return d
     
-    #split data on condition feature is true or false
+    #split data on condition 'feature' is true or false
     def splitBinary(self, feature, data):
         subsetTrue = []
         subsetFalse = []
@@ -60,6 +68,7 @@ class ID3(object):
                 subsetFalse.append(a)
         return (subsetTrue, subsetFalse)
     
+    #split data on real values of the 'feature'
     def splitRealBuckets(self, feature, data):
         childrenSubsets = []
         delta = float(1)/(float(self.realBins))
@@ -70,6 +79,7 @@ class ID3(object):
                     childrenSubsets[i].append(a)
         return childrenSubsets
     
+    #split data on years of the 'feature'
     def splitYearBuckets(self, feature, data):
         childrenSubsets = []
         delta = self.yearBinSize
@@ -86,6 +96,7 @@ class ID3(object):
             i += 1
         return childrenSubsets
     
+    #calculate the information gain of the feature with these child subsets
     def calculateGain(self, entropy, childrenSubsets, numTotal):
         gain = entropy
         for s in childrenSubsets:
@@ -94,6 +105,7 @@ class ID3(object):
             gain -= (float(len(s))/float(numTotal))*sEntropy
         return gain
     
+    #split data based on type of 'feature' and get the information gain of the feature
     def informationGain(self, feature, data):
         numNots, numHots = self.getNotsAndHots(data)
         numTotal = len(data)
@@ -114,6 +126,7 @@ class ID3(object):
             gain = self.calculateGain(entropy, childrenSubsets, numTotal)
         return gain
     
+    #get the feature with the max gain and its value from the dictionary 'info'
     def getMaxF(self,info):
         maxV = float(-9999999)
         maxF = ""
@@ -131,6 +144,7 @@ class ID3(object):
             featsAndGain[feature] = infoGain
         return self.getMaxF(featsAndGain)
     
+    #run the ID3 algorithm on the 'data'
     def runID3(self, data):
         self.setNums(data)
         if(self.entropy(self.nots, self.hots) == 0):
@@ -168,6 +182,7 @@ class ID3(object):
             node = Node(value, None, None, "", int(self.nots), int(self.hots))
         return node
     
+    #get the classification label for the example 'a' in the subtree node
     def getValue(self, node, a):
         if(not(node.value == 0)):
             return node.value
@@ -193,6 +208,7 @@ class ID3(object):
                         if a[node.feature] >= (i)*delta and a[node.feature] < (i+1)*delta:
                             return self.getValue(node.children[i], a)
     
+    #classify the data by getting the label for each example
     def testID3(self, tree, data):
         correct = 0
         totalTreePos = 0
@@ -230,6 +246,7 @@ class ID3(object):
                     treeTruePos += 1
         return correct, treeTruePos, totalTreePos
     
+    #get the max depth in the list 'depths' of child depths
     def maxChildDepths(self, depths):
         maxD = float(-9999999)
         for d in depths:
@@ -237,6 +254,7 @@ class ID3(object):
                 maxD = d
         return maxD
     
+    #get the max depth in the subtree 'node'
     def maxDepth(self, node):
         if(not(node.value == 0)):
             return 1
@@ -254,6 +272,7 @@ class ID3(object):
             maxD = self.maxChildDepths(depths)
             return maxD + 1
     
+    #traverse the tree until you get to depth 'd' and turn that node into a leaf
     def postPrune(self, node, d):
         if(self.maxDepth(node) <= d):
             return node
@@ -270,6 +289,7 @@ class ID3(object):
                 c = self.postPrune(c, d-1)
         return node
     
+    #train tree on 'trainData'
     def train(self, trainData):
         #print "Training tree..."
         root = self.runID3(trainData)
@@ -277,6 +297,7 @@ class ID3(object):
         #print "ROOT FEATURE " + str(root.feature)
         #print "Done training."
     
+    #helper recursive function for printRootTree
     def printTree(self, node, level):
         i = 0
         ind = ""
@@ -300,6 +321,7 @@ class ID3(object):
                 else:
                     self.printTree(c, level+1)
     
+    #prints the whole tree
     def printRootTree(self):
         print "Tree:"
         print "root node feature: (" + str(self.root.feature)  + ") data: [" + str(self.root.hots) + "+, " + str(self.root.nots) + "-]"
@@ -326,6 +348,7 @@ class ID3(object):
         maxDep = self.maxDepth(self.root)
         print "max depth: " + str(maxDep)
     
+    #prints a summary of the tree, only up to depth 3
     def printTreeSum(self):
         print "Tree:"
         print "root node feature: (" + str(self.root.feature)  + ") data: [" + str(self.root.hots) + "+, " + str(self.root.nots) + "-]"
@@ -377,16 +400,17 @@ class ID3(object):
         maxDep = self.maxDepth(self.root)
         print "max depth: " + str(maxDep)
     
+    #classify and get performance results
     def test(self, tree, testData):
-        #print "Testing..."
-        #print "Tree max depth: " + str(self.maxDepth(tree.root))
+        print "Testing..."
+        print "Tree max depth: " + str(self.maxDepth(tree.root))
         testCorrect, treeTruePos, totalTreePos = self.testID3(tree, testData)
         if totalTreePos < 1:
             totalTreePos = 1
         accuracy = float(testCorrect)/float(len(testData))
         precision = float(treeTruePos)/float(totalTreePos)
-        #print "correct: " + str(int(testCorrect)) + " total: " + str(len(testData)) + " accuracy = " + str(accuracy)
-        #print "tree correctly predicted hot: " + str(treeTruePos) + " num tree hot: " + str(totalTreePos) + " precision = " + str(precision)
+        print "correct: " + str(int(testCorrect)) + " total: " + str(len(testData)) + " accuracy = " + str(accuracy)
+        print "tree correctly predicted hot: " + str(treeTruePos) + " num tree hot: " + str(totalTreePos) + " precision = " + str(precision)
         return (accuracy, precision)
     
 class Node(ID3):
@@ -399,17 +423,19 @@ class Node(ID3):
         self.right = right
         self.children = children
 
+#get the data from the pickle files
 def getData():
-    #print "Loading data..."
+    print "Loading data..."
     f = open('train.pkl')
     trainData = pickle.load(f)
     f.close()
     f = open('test.pkl')
     testData = pickle.load(f)
     f.close()
-    #print "success"
+    print "success"
     return trainData, testData
 
+#train tree on 'data'
 def trainDT(data):
     node = Node()
     tree = ID3(node)

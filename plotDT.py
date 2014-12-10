@@ -1,21 +1,30 @@
+'''
+CS4780 Final Project
+Post Pruning and Cross Validation
+@author: Kelsey Duncan ked83
+'''
 from matplotlib import pyplot as plt
 from dt import *
 import random
 
-
+#get data
 trainData, testData = getData()
+
 depths = range(2, 33)
 testAccuracies = []
 testPrecisions = []
 trainAccuracies = []
 trainPrecisions = []
 
+#train a tree on 'trData' and prune it to depth 'i' then test on tsData
+#return accuracy and precision
 def prune(i, trData, tsData):
     tree = trainDT(trData)
     tree.postPrune(tree.root, i)
     a, p = tree.test(tree, tsData)
     return a, p
 
+#get test and train accuracies and precisions for each depth
 def fillArrays():
     for i in range(2, 33):
         a, p = prune(i, trainData, testData)
@@ -30,6 +39,7 @@ def fillArrays():
 #print str(trainAccuracies)
 #print str(trainPrecisions)
 
+#plot depth vs 'yVals'
 def pltG(title, yVals):
     plt.figure()
     plt.title(title + " vs Depth")
@@ -62,7 +72,7 @@ def plotGraphs():
     plt.legend()
     plt.savefig("DT Train & Test Precision.png")
 
-
+#plot cross validation accuracies and precisions
 def plotCV(results, f, title):
     x = [results[r][2] for r in results if results[r][0] != None]
     y = [results[r][0] for r in results if results[r][0] != None]
@@ -81,6 +91,7 @@ def plotCV(results, f, title):
     plt.plot(x, y, ".")
     plt.savefig(title + "CV Precision.png")
 
+#get accuracy and precision for depth 'd' training on trainData and testing on testData
 def test(trainData, testData, d):
     a, p = prune(d, trainData, testData)
     result = []
@@ -88,14 +99,15 @@ def test(trainData, testData, d):
     result.append(p)
     return result
 
-def crossValidate(X, T, depths, f, title):
-    random.shuffle(X)
-    size = float(len(X))/f
+#cross validate with 'f' folds
+def crossValidate(trainD, testD, depths, f, title):
+    random.shuffle(trainD)
+    size = float(len(trainD))/f
     results = {d:[0., 0.] for d in depths}
     counts = {d:[0, 0] for d in depths}
     for i in range(f):
         for d in depths:
-            result = test(X[0:int(i*size)]+X[int((i+1)*size):], X[int(i*size):int((i+1)*size)], d)
+            result = test(trainD[0:int(i*size)]+trainD[int((i+1)*size):], trainD[int(i*size):int((i+1)*size)], d)
             for j in range(2):
                 if result[j] != None:
                     results[d][j] += result[j]
@@ -114,7 +126,7 @@ def crossValidate(X, T, depths, f, title):
     bestPrecision = results[d]
     print "Best Precision:", bestPrecision
     plotCV(results, f, title)
-    return (test(X, T, bestAccuracy[2]), test(X, T, bestPrecision[2]))
+    return (test(trainD, testD, bestAccuracy[2]), test(trainD, testD, bestPrecision[2]))
 
 def main():
     print "filling arrays"
