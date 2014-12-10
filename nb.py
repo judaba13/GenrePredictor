@@ -118,6 +118,7 @@ def nb(traindata, testdata):
 
 
 def accuracy(result, data):
+    # calculates accuracy
     match = 0
     for i in range(len(result)):
         if result[i]-data[i]==0:
@@ -125,6 +126,7 @@ def accuracy(result, data):
     return float(match)/len(result)
 
 def precision(result, data):
+    # calculates precision
     match = 0
     for i in range(len(result)):
         if result[i]==1 and data[i]==1:
@@ -132,6 +134,7 @@ def precision(result, data):
     return float(match)/result.count(1)
 
 def find(mat,element):
+    # finds all index of given element in the matrix mat
     idx = []
     for i in range(len(mat)):
         if mat[i]==element:
