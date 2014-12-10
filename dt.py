@@ -271,11 +271,11 @@ class ID3(object):
         return node
     
     def train(self, trainData):
-        print "Training tree..."
+        #print "Training tree..."
         root = self.runID3(trainData)
         self.root = root
-        print "ROOT FEATURE " + str(root.feature)
-        print "Done training."
+        #print "ROOT FEATURE " + str(root.feature)
+        #print "Done training."
     
     def printTree(self, node, level):
         i = 0
@@ -385,8 +385,8 @@ class ID3(object):
             totalTreePos = 1
         accuracy = float(testCorrect)/float(len(testData))
         precision = float(treeTruePos)/float(totalTreePos)
-        print "correct: " + str(int(testCorrect)) + " total: " + str(len(testData)) + " accuracy = " + str(accuracy)
-        print "tree correctly predicted hot: " + str(treeTruePos) + " num tree hot: " + str(totalTreePos) + " precision = " + str(precision)
+        #print "correct: " + str(int(testCorrect)) + " total: " + str(len(testData)) + " accuracy = " + str(accuracy)
+        #print "tree correctly predicted hot: " + str(treeTruePos) + " num tree hot: " + str(totalTreePos) + " precision = " + str(precision)
         return (accuracy, precision)
     
 class Node(ID3):
@@ -400,14 +400,14 @@ class Node(ID3):
         self.children = children
 
 def getData():
-    print "Loading data..."
+    #print "Loading data..."
     f = open('train.pkl')
     trainData = pickle.load(f)
     f.close()
     f = open('test.pkl')
     testData = pickle.load(f)
     f.close()
-    print "success"
+    #print "success"
     return trainData, testData
 
 def trainDT(data):
@@ -420,10 +420,10 @@ def main():
     trainData, testData = getData()
     tree = trainDT(trainData)
     tree.test(tree, testData)
-    #tree.printTreeSum()
-    #print "pruning to depth 5"
-    #tree.postPrune(tree.root, 5)
+    tree.printTreeSum()
+    #print "pruning to depth 10"
+    #tree.postPrune(tree.root, 10)
+    #tree.printRootTree()
     #tree.test(tree, testData)
-    tree.printRootTree()
 
 main()

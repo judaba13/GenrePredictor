@@ -1,0 +1,10 @@
+Decision Tree CV Results
+[accuracy, precision]
+
+Cross Validation
+Best Average Accuracy:  [0.6645472944590828, 0.5813183753033376, 10]
+Best Average Precision: [0.6513537251307902, 0.6275304061018346, 6]
+
+Testing
+Depth 10: [0.6053639846743295, 0.4642857142857143]
+Depth 6: [0.6283524904214559, 0.5357142857142857]
