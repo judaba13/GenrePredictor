@@ -1,4 +1,5 @@
 import math
+import pickle
 
 def dot(x, y):
 	total = 0.
@@ -32,3 +33,33 @@ def normalizeZ(data):
 		mn = mean(vals)
 		for dp in data:
 			dp[f] = (dp[f]-mn)/sd
+
+def toSVMLight(path, testdata):
+	testfile = open(path, 'w')
+	for d in testdata:
+		if d.label==0:
+			testfile.write(-1)
+		else:
+			testfile.write(str(d.label))
+		testfile.write(' ')
+		featuremat = []
+		count = 1
+		for feature in d:
+			testfile.write(str(count))
+			testfile.write(':')
+			testfile.write(str(d[feature]))
+			testfile.write(' ')
+			count = count+1
+			featuremat.append(d[feature])
+		testfile.write('# \n')
+	testfile.close()
+
+def loadData():
+	print "Loading data..."
+	f = open('train_raw.pkl', 'rb')
+	X = pickle.load(f)
+	f.close()
+	f = open('test_raw.pkl', 'rb')
+	T = pickle.load(f)
+	f.close()
+	return (X, T)

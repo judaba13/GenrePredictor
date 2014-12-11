@@ -133,24 +133,18 @@ def crossValidRegresion(X, T, kVals, K, f, title):
 	return crossValidate(X, T, kVals, K, testRegression, f, "kNN Regression "+title)
 
 def main():
-	import pickle
-	print "Loading data..."
-	f = open('train.pkl')
-	X = pickle.load(f)
-	f.close()
-	f = open('test.pkl')
-	T = pickle.load(f)
-	f.close()
+	X, T = loadData()
+	print "Normlizing..."
 	normalize01(X, T)
 	kVals = [1,2,3,5,7,10,13,17,21,26,31,37,43,50,57]
 	print "Testing euclidean regression..."
-	print crossValidRegresion(X, T, kVals, euclideanSimilarity, 7, "Euclidean")
+	print crossValidRegresion(X, T, kVals, euclideanSimilarity, 7, "n Euclidean")
 	print "Testing euclidean majority..."
-	print crossValidMajority(X, T, kVals, euclideanSimilarity, 7, "Euclidean")
+	print crossValidMajority(X, T, kVals, euclideanSimilarity, 7, "n Euclidean")
 	print "Testing cosine majority..."
-	print crossValidMajority(X, T, kVals, cosineSimilarity, 7, "Cosine")
+	print crossValidMajority(X, T, kVals, cosineSimilarity, 7, "n Cosine")
 	print "Testing cosine regression..."
-	print crossValidRegresion(X, T, kVals, cosineSimilarity, 7, "Cosine")
+	print crossValidRegresion(X, T, kVals, cosineSimilarity, 7, "n Cosine")
 
 main()
 
